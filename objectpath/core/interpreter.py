@@ -15,6 +15,7 @@ from objectpath.utils.debugger import Debugger
 EPSILON = 0.0000000000000001  #this is used in float comparison
 EXPR_CACHE = {}
 RE_TYPE = type(re.compile(''))
+RE_NUMERIC = re.compile(r"[+-]?\d*\.?\d+")
 # setting external modules to 0, thus enabling lazy loading. 0 ensures that Pythonic types are never matched.
 # this way is efficient because if statement is fast and once loaded these variables are pointing to libraries.
 ObjectId = generateID = calendar = escape = escapeDict = unescape = unescapeDict = 0
@@ -612,6 +613,16 @@ class Tree(Debugger):
                   "Wrong usage of slice(STRING, ARRAY). Provided %s argument, should be exactly 2."
                   % len(args)
               )
+        elif fnName == "startswith":
+          return bool(args[0].startswith(args[1]))
+        elif fnName == "strip":
+          return args[0].strip(*args[1:])
+        elif fnName == "numeric":
+          if isinstance(args[0], (int, float)):
+            return True
+          if isinstance(args[0], str):
+              return bool(RE_NUMERIC.fullmatch(args[0]))
+          return False
         elif fnName == "escape":
           global escape, escapeDict
           if not escape:
