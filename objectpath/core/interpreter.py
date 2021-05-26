@@ -6,6 +6,8 @@
 import sys, re
 
 import pendulum
+from pendulum.period import Period
+from datetime import datetime
 
 from .parser import parse
 from objectpath.core import *
@@ -208,6 +210,10 @@ class Tree(Debugger):
           return any(
               x in max(fst, snd, key=len) for x in min(fst, snd, key=len)
           )
+        if isinstance(fst, Period) and isinstance(snd, Period):
+            return bool(snd.start <= fst.start and snd.end >= fst.end)
+        if isinstance(fst, datetime) and isinstance(snd, Period):
+            return bool(snd.start <= fst and snd.end >= fst)
         return exe(node[1]) in exe(node[2])
       elif op == "not in":
         fst = exe(node[1])
@@ -217,6 +223,10 @@ class Tree(Debugger):
           return not any(
               x in max(fst, snd, key=len) for x in min(fst, snd, key=len)
           )
+        if isinstance(fst, Period) and isinstance(snd, Period):
+            return bool(snd.start > fst.start or snd.end < fst.end)
+        if isinstance(fst, datetime) and isinstance(snd, Period):
+            return bool(snd.start > fst or snd.end < fst)
         return exe(node[1]) not in exe(node[2])
       elif op in ("is", "is not"):
         if D: self.debug("found operator '%s'", op)
