@@ -4,10 +4,15 @@
 # Copyright (C) 2010-2014 Adrian Kalbarczyk
 
 import sys, re
+
+import pendulum
+from pendulum.period import Period
+from datetime import datetime
+
 from .parser import parse
 from objectpath.core import *
 import objectpath.utils.colorify as color  # pylint: disable=W0614
-from objectpath.utils import flatten, filter_dict, timeutils, skip
+from objectpath.utils import flatten, filter_dict, skip
 from objectpath.utils.json_ext import py2JSON
 from objectpath.core import ITER_TYPES, generator, chain
 from objectpath.utils.debugger import Debugger
@@ -83,8 +88,7 @@ class Tree(Debugger):
 				node[1:] - params
 			"""
       types = [
-          str, timeutils.datetime.time, timeutils.datetime.date,
-          timeutils.datetime.datetime
+          str
       ]
       try:
         types += [unicode]
@@ -156,12 +160,6 @@ class Tree(Debugger):
               if typesnd is unicode:
                 snd = snd.encode("utf-8")
             return str(fst) + str(snd)
-          try:
-            timeType = timeutils.datetime.time
-            if typefst is timeType and typesnd is timeType:
-              return timeutils.addTimes(fst, snd)
-          except Exception:
-            pass
           if D: self.debug("standard addition, returning '%s'", fst + snd)
           return fst + snd
         else:
@@ -170,14 +168,7 @@ class Tree(Debugger):
         if len(node) > 2:
           fst = exe(node[1])
           snd = exe(node[2])
-          try:
-            return fst - snd
-          except Exception:
-            typefst = type(fst)
-            typesnd = type(snd)
-            timeType = timeutils.datetime.time
-            if typefst is timeType and typesnd is timeType:
-              return timeutils.subTimes(fst, snd)
+          return fst - snd
         else:
           return -exe(node[1])
       elif op == "*":
@@ -185,7 +176,7 @@ class Tree(Debugger):
       elif op == "%":
         return exe(node[1]) % exe(node[2])
       elif op == "/":
-        return exe(node[1])/float(exe(node[2]))
+        return exe(node[1])/exe(node[2])
       elif op == ">":
         if D: self.debug("%s > %s, %s", node[1], node[2], node[1] > node[2])
         return exe(node[1]) > exe(node[2])
@@ -219,6 +210,10 @@ class Tree(Debugger):
           return any(
               x in max(fst, snd, key=len) for x in min(fst, snd, key=len)
           )
+        if isinstance(fst, Period) and isinstance(snd, Period):
+            return bool(snd.start <= fst.start and snd.end >= fst.end)
+        if isinstance(fst, datetime) and isinstance(snd, Period):
+            return bool(snd.start <= fst and snd.end >= fst)
         return exe(node[1]) in exe(node[2])
       elif op == "not in":
         fst = exe(node[1])
@@ -228,6 +223,10 @@ class Tree(Debugger):
           return not any(
               x in max(fst, snd, key=len) for x in min(fst, snd, key=len)
           )
+        if isinstance(fst, Period) and isinstance(snd, Period):
+            return bool(snd.start > fst.start or snd.end < fst.end)
+        if isinstance(fst, datetime) and isinstance(snd, Period):
+            return bool(snd.start > fst or snd.end < fst)
         return exe(node[1]) not in exe(node[2])
       elif op in ("is", "is not"):
         if D: self.debug("found operator '%s'", op)
@@ -576,13 +575,6 @@ class Tree(Debugger):
             a = args[0]
           except IndexError:
             return []
-          targs = type(a)
-          if targs is timeutils.datetime.datetime:
-            return timeutils.date2list(a) + timeutils.time2list(a)
-          if targs is timeutils.datetime.date:
-            return timeutils.date2list(a)
-          if targs is timeutils.datetime.time:
-            return timeutils.time2list(a)
           return list(a)
         # string
         elif fnName == "upper":
@@ -685,37 +677,8 @@ class Tree(Debugger):
               return joiner.join(map(str, args[0]))
             except Exception:
               return args[0]
-        # time
-        elif fnName in ("now", "age", "time", "date", "dateTime"):
-          if fnName == "now":
-            return timeutils.now()
-          if fnName == "date":
-            return timeutils.date(args)
-          if fnName == "time":
-            return timeutils.time(args)
-          if fnName == "dateTime":
-            return timeutils.dateTime(args)
-          # TODO move lang to localize() entirely!
-          if fnName == "age":
-            a = {}
-            if len(args) > 1:
-              a["reference"] = args[1]
-            if len(args) > 2:
-              a["lang"] = args[2]
-            return list(timeutils.age(args[0], **a))
-        elif fnName == "toMillis":
-          args = args[0]
-          if args.utcoffset() is not None:
-            args = args - args.utcoffset()  # pylint: disable=E1103
-          global calendar
-          if not calendar:
-            import calendar
-          return int(
-              calendar.timegm(args.timetuple())*1000 + args.microsecond/1000
-          )
-        elif fnName == "localize":
-          if type(args[0]) is timeutils.datetime.datetime:
-            return timeutils.UTC2local(*args)
+        elif fnName == "datetime":
+          return pendulum.parse(args[0])
         # polygons
         elif fnName == "area":
 

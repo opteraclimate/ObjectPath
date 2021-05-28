@@ -341,11 +341,6 @@ class ObjectPath(unittest.TestCase):
     self.assertEqual(execute("array()"), [])
     self.assertEqual(execute("array([])"), [])
     self.assertEqual(execute("array('abc')"), ['a', 'b', 'c'])
-    self.assertEqual(
-      execute("array(dateTime([2011,4,8,12,0]))"), [2011, 4, 8, 12, 0, 0, 0]
-    )
-    self.assertEqual(execute("array(date([2011,4,8]))"), [2011, 4, 8])
-    self.assertEqual(execute("array(time([12,12,30]))"), [12, 12, 30, 0])
 
   def test_builtin_arithmetic(self):
     self.assertEqual(execute("sum([1,2,3,4])"), sum([1, 2, 3, 4]))
@@ -430,101 +425,32 @@ class ObjectPath(unittest.TestCase):
 
   def test_builtin_time(self):
     import datetime
-    self.assertIsInstance(execute("now()"), datetime.datetime)
-    self.assertIsInstance(execute("date()"), datetime.date)
-    self.assertIsInstance(execute("date(now())"), datetime.date)
-    self.assertIsInstance(execute("date([2001,12,30])"), datetime.date)
-    self.assertIsInstance(execute("time()"), datetime.time)
-    self.assertIsInstance(execute("time(now())"), datetime.time)
-    self.assertIsInstance(execute("time([12,23])"), datetime.time)
-    self.assertIsInstance(execute("time([12,23,21,777777])"), datetime.time)
-    self.assertIsInstance(execute("dateTime(now())"), datetime.datetime)
-    self.assertIsInstance(
-      execute("dateTime([2001,12,30,12,23])"), datetime.datetime
-    )
-    self.assertIsInstance(
-      execute("dateTime([2001,12,30,12,23,21,777777])"), datetime.datetime
-    )
-    self.assertIsInstance(execute('dateTime("1980-05-11 04:22:33", "%Y-%m-%d %H:%M:%S")'), datetime.datetime)
-    self.assertEqual(str(execute('dateTime("1980-05-11 04:22:33", "%Y-%m-%d %H:%M:%S")')), "1980-05-11 04:22:33")
+    self.assertIsInstance(execute("datetime('now')"), datetime.datetime)
+    self.assertIsInstance(execute("datetime('2001-12-30')"), datetime.datetime)
+    self.assertIsInstance(execute("datetime('12:00')"), datetime.datetime)
+    self.assertEqual(execute("(datetime('2020-01-01') - datetime('2019-01-01')) / datetime('P1D')"), 365)
+    self.assertTrue(execute("datetime('2019') in (datetime('2020')-datetime('2018'))"))
+    self.assertFalse(execute("datetime('2017') in (datetime('2020')-datetime('2018'))"))
+    self.assertTrue(execute("datetime('2017') not in (datetime('2020')-datetime('2018'))"))
 
-    self.assertEqual(
-      execute("toMillis(dateTime([2001,12,30,12,23,21,777777]))"),
-      1009715001777
-    )
-    self.assertIsInstance(
-      execute("dateTime(date(),time())"), datetime.datetime
-    )
-    self.assertIsInstance(
-      execute("dateTime(date(),[12,23])"), datetime.datetime
-    )
-    self.assertIsInstance(
-      execute("dateTime(date(),[12,23,21,777777])"), datetime.datetime
-    )
-    self.assertIsInstance(
-      execute("dateTime([2001,12,30],time())"), datetime.datetime
-    )
-    self.assertEqual(
-      execute("array(time([12,30])-time([8,00]))"), [4, 30, 0, 0]
-    )
-    self.assertEqual(
-      execute("array(time([12,12,12,12])-time([8,8,8,8]))"), [4, 4, 4, 4]
-    )
-    self.assertEqual(
-      execute("array(time([12,12,12,12])-time([1,2,3,4]))"), [11, 10, 9, 8]
-    )
-    self.assertEqual(
-      execute("array(time([12,00])-time([1,10]))"), [10, 50, 0, 0]
-    )
-    self.assertEqual(
-      execute("array(time([1,00])-time([1,10]))"), [23, 50, 0, 0]
-    )
-    self.assertEqual(
-      execute("array(time([0,00])-time([0,0,0,1]))"), [23, 59, 59, 999999]
-    )
-    self.assertEqual(
-      execute("array(time([0,0])+time([1,1,1,1]))"), [1, 1, 1, 1]
-    )
-    self.assertEqual(
-      execute("array(time([0,0])+time([1,2,3,4]))"), [1, 2, 3, 4]
-    )
-    self.assertEqual(
-      execute("array(time([23,59,59,999999])+time([0,0,0,1]))"), [0, 0, 0, 0]
-    )
-    # age tests
-    self.assertEqual(execute("age(now())"), [0, "seconds"])
-    self.assertEqual(
-      execute("age(dateTime([2000,1,1,1,1]),dateTime([2001,1,1,1,1]))"),
-      [1, "year"]
-    )
-    self.assertEqual(
-      execute("age(dateTime([2000,1,1,1,1]),dateTime([2000,2,1,1,1]))"),
-      [1, "month"]
-    )
-    self.assertEqual(
-      execute("age(dateTime([2000,1,1,1,1]),dateTime([2000,1,2,1,1]))"),
-      [1, "day"]
-    )
-    self.assertEqual(
-      execute("age(dateTime([2000,1,1,1,1]),dateTime([2000,1,1,2,1]))"),
-      [1, "hour"]
-    )
-    self.assertEqual(
-      execute("age(dateTime([2000,1,1,1,1]),dateTime([2000,1,1,1,2]))"),
-      [1, "minute"]
-    )
-    self.assertEqual(
-      execute("age(dateTime([2000,1,1,1,1,1]),dateTime([2000,1,1,1,1,2]))"),
-      [1, "second"]
-    )
-    self.assertEqual(
-      execute("""array(time([0,0]) - time([0,0,0,999999]))"""),
-      [23, 59, 59, 1]
-    )
-    self.assertEqual(
-      execute("""array(time([0,0]) + time([0,0,0,999999]))"""),
-      [0, 0, 0, 999999]
-    )
+    #begins outside
+    self.assertFalse(execute("(datetime('2018') - datetime('2017-12-01')) in (datetime('2020')-datetime('2018'))"))
+    #ends outside
+    self.assertFalse(execute("(datetime('2020-02-01') - datetime('2019')) in (datetime('2020')-datetime('2018'))"))
+    #begins and ends outside
+    self.assertFalse(execute("(datetime('2021') - datetime('2017')) in (datetime('2020')-datetime('2018'))"))
+    #begins and ends inside
+    self.assertTrue(execute("(datetime('2019-12-31') - datetime('2018-01-02')) in (datetime('2020')-datetime('2018'))"))
+
+    #begins outside
+    self.assertTrue(execute("(datetime('2018') - datetime('2017-12-01')) not in (datetime('2020')-datetime('2018'))"))
+    #ends outside
+    self.assertTrue(execute("(datetime('2020-02-01') - datetime('2019')) not in (datetime('2020')-datetime('2018'))"))
+    #begins and ends outside
+    self.assertTrue(execute("(datetime('2021') - datetime('2017')) not in (datetime('2020')-datetime('2018'))"))
+    #begins and ends inside
+    self.assertFalse(execute("(datetime('2019-12-31') - datetime('2018-01-02')) not in (datetime('2020')-datetime('2018'))"))
+
 
   def test_localize(self):
     pass
@@ -631,7 +557,7 @@ class ObjectPath_Paths(unittest.TestCase):
         'title': 'The Lord of the Rings'
       }]
     )
-    self.assertIsInstance(execute("now().year"), int)
+    self.assertIsInstance(execute("datetime('now').year"), int)
 
   def test_complex_paths(self):
     self.assertEqual(sorted(execute("$.._id")), [1, 2, 3, 4])
