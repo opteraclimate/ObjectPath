@@ -174,6 +174,8 @@ class Tree(Debugger):
           return -exe(node[1])
       elif op == "*":
         return exe(node[1])*exe(node[2])
+      elif op == "**":
+        return exe(node[1])**exe(node[2])
       elif op == "%":
         return exe(node[1]) % exe(node[2])
       elif op == "/":

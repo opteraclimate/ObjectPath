@@ -193,6 +193,10 @@ class ObjectPath(unittest.TestCase):
     self.assertEqual(execute("-+-3"), 3)
     self.assertEqual(execute("+-+3"), -3)
 
+  def test_arithm_exp(self):
+    self.assertEqual(execute("2**3"), 8)
+    self.assertEqual(execute("2*2**3*2"), 32)
+
   def test_arithm_mul(self):
     self.assertEqual(execute("2*3*5*6"), 180)
 
