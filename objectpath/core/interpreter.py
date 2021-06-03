@@ -20,7 +20,8 @@ from objectpath.utils.debugger import Debugger
 EPSILON = 0.0000000000000001  #this is used in float comparison
 EXPR_CACHE = {}
 RE_TYPE = type(re.compile(''))
-RE_NUMERIC = re.compile(r"[+-]?\d*\.?\d+")
+RE_FLOAT = re.compile(r"[+-]?\d*\.\d+")
+RE_INT = re.compile(r"[+-]?\d+")
 # setting external modules to 0, thus enabling lazy loading. 0 ensures that Pythonic types are never matched.
 # this way is efficient because if statement is fast and once loaded these variables are pointing to libraries.
 ObjectId = generateID = calendar = escape = escapeDict = unescape = unescapeDict = 0
@@ -611,9 +612,12 @@ class Tree(Debugger):
           return args[0].strip(*args[1:])
         elif fnName == "numeric":
           if isinstance(args[0], (int, float)):
-            return True
+            return args[0]
           if isinstance(args[0], str):
-              return bool(RE_NUMERIC.fullmatch(args[0]))
+            if RE_INT.fullmatch(args[0]):
+              return int(args[0])
+            if RE_FLOAT.fullmatch(args[0]):
+              return float(args[0])
           return False
         elif fnName == "escape":
           global escape, escapeDict
