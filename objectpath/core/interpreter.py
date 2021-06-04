@@ -698,6 +698,8 @@ class Tree(Debugger):
               sum(x0*y1 - x1*y0 for ((x0, y0), (x1, y1)) in segments(args[0]))
           )
         # misc
+        elif fnName == "get":
+          return args[0][args[1]]
         elif fnName == "keys":
           try:
             return list(args[0].keys())

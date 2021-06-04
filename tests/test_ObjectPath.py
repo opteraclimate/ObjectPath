@@ -648,6 +648,9 @@ class ObjectPath_Paths(unittest.TestCase):
       execute4('map(values, $..root..response).value'), [5, 4, 0]
     )
 
+  def test_get(self):
+    self.assertEqual(execute("get({'1':1,'2':2}, '2')"), 2)
+
 #testcase2=unittest.FunctionTestCase(test_efficiency(2))
 testcase1 = unittest.TestLoader().loadTestsFromTestCase(ObjectPath)
 testcase2 = unittest.TestLoader().loadTestsFromTestCase(ObjectPath_Paths)
