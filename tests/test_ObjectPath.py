@@ -193,6 +193,10 @@ class ObjectPath(unittest.TestCase):
     self.assertEqual(execute("-+-3"), 3)
     self.assertEqual(execute("+-+3"), -3)
 
+  def test_arithm_exp(self):
+    self.assertEqual(execute("2**3"), 8)
+    self.assertEqual(execute("2*2**3*2"), 32)
+
   def test_arithm_mul(self):
     self.assertEqual(execute("2*3*5*6"), 180)
 
@@ -390,18 +394,20 @@ class ObjectPath(unittest.TestCase):
     self.assertEqual(execute("startswith('foobar', 'bar')"), False)
     self.assertEqual(execute("strip(' \tfoo bar\t')"), "foo bar")
     self.assertEqual(execute("strip(' \tfoo bar\t', ' ')"), "\tfoo bar\t")
-    self.assertEqual(execute("numeric('2')"), True)
-    self.assertEqual(execute("numeric('+2')"), True)
-    self.assertEqual(execute("numeric('-2')"), True)
-    self.assertEqual(execute("numeric('2.1')"), True)
-    self.assertEqual(execute("numeric('-2.1')"), True)
-    self.assertEqual(execute("numeric('.1')"), True)
+    self.assertEqual(execute("numeric('2')"), 2)
+    self.assertEqual(execute("numeric('+2')"), 2)
+    self.assertEqual(execute("numeric('-2')"), -2)
+    self.assertEqual(execute("numeric('2.1')"), 2.1)
+    self.assertEqual(execute("numeric('-2.1')"), -2.1)
+    self.assertEqual(execute("numeric('.1')"), 0.1)
     self.assertEqual(execute("numeric('1.')"), False)
     self.assertEqual(execute("numeric('')"), False)
     self.assertEqual(execute("numeric('a')"), False)
-    self.assertEqual(execute("numeric(2)"), True)
-    self.assertEqual(execute("numeric(2.0)"), True)
-    self.assertEqual(execute("numeric(2.1)"), True)
+    self.assertEqual(execute("numeric(2)"), 2)
+    self.assertEqual(execute("numeric(2.0)"), 2.0)
+    self.assertEqual(execute("numeric(2.1)"), 2.1)
+    self.assertEqual(execute("max([10, None][numeric(@)])"), 10)
+    self.assertEqual(execute("min([10, None][numeric(@)])"), 10)
 
   def test_builtin_arrays(self):
     self.assertEqual(execute("sort([1,2,3,4]+[2,4])"), [1, 2, 2, 3, 4, 4])
@@ -641,6 +647,9 @@ class ObjectPath_Paths(unittest.TestCase):
     self.assertItemsEqual(
       execute4('map(values, $..root..response).value'), [5, 4, 0]
     )
+
+  def test_get(self):
+    self.assertEqual(execute("get({'1':1,'2':2}, '2')"), 2)
 
 #testcase2=unittest.FunctionTestCase(test_efficiency(2))
 testcase1 = unittest.TestLoader().loadTestsFromTestCase(ObjectPath)
