@@ -4,6 +4,15 @@ from setuptools import setup
 def read(*rnames):
   return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
+try:
+  with open("requirements.txt") as reqs:
+    lines = reqs.read().split("\n")
+    requirements = list(
+      filter(lambda l: not l.startswith("#") and not l.startswith("git+"), lines)
+    )
+except IOError:
+  requirements = []
+
 long_description = (read('README.rst') + '\n' + 'Download\n' '********\n')
 
 setup(
@@ -24,9 +33,7 @@ setup(
     "Programming Language :: Python",
     "Topic :: Software Development :: Libraries :: Python Modules"
   ],
-  install_requires=[
-    'pytz',
-  ],
+  install_requires=requirements,
   zip_safe=True,
   entry_points={'console_scripts': ['objectpath = objectpath.shell:main']},
   test_suite="tests"
