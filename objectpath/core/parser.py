@@ -10,6 +10,8 @@
 # - optimized
 
 import sys
+from functools import partial
+import tokenize as tokenizer
 
 if sys.version_info[0] >= 3:
   from io import StringIO
@@ -77,14 +79,19 @@ class symbol_base(object):
         t_append = t.append
         if self.id == "{":
           ret = {}
-          for j in list(self.fst.items()):
-            ret[j[0].getTree()] = j[1].getTree()
+          for k, v in self.fst.items():
+            ret[k.getTree()] = v.getTree()
           return ret
         for j in i:
           try:
             t_append(j.getTree())
           except Exception:
             t_append(j)
+        if self.id == "(toobj)":
+          ret.append({
+            k.getTree():v.getTree()
+            for k, v in self.snd.items()
+          })
         if self.id in ("[", ".", ".."):
           ret.append(t)
         else:
@@ -266,20 +273,25 @@ def led(self, left):  # pylint: disable=E0102
   if token.id == "@":
     attr = True
     advance()
-  if token.id == "(":
+  if token.id == "{":
+    self.id = "(toobj)"
     advance()
     self.fst = left
-    self.snd = []
-    if token.id != ")":
-      self_snd_append = self.snd.append
+    self.snd = {}
+    if token.id != "}":
       while 1:
-        self_snd_append(expression())
+        if token.id == "}":
+          break
+        key = expression()
+        advance(":")
+        self.snd[key] = expression()
         if token.id != ",":
           break
         advance(",")
-    advance(")")
+    advance("}")
     return self
-  if token.id not in ["(name)", "*", "(literal)", "("]:
+
+  if token.id not in ["(name)", "*", "(literal)", "{"]:
     raise SyntaxError("Expected an attribute name.")
   self.fst = left
   if attr:
@@ -401,7 +413,6 @@ def nud(self):  # pylint: disable=E0102
   advance("}")
   return self
 
-import tokenize as tokenizer
 type_map = {
     tokenizer.NUMBER: "(number)",
     tokenizer.STRING: "(literal)",
@@ -418,7 +429,6 @@ def tokenize_python(program):
   else:
     tokens = tokenizer.generate_tokens(StringIO(program).__next__)
   for t in tokens:
-    # print type_map[t[0]], t[1]
     try:
       # change this to output python values in correct type
       yield type_map[t[0]], t[1]
@@ -482,10 +492,7 @@ def parse(expr, D=False):
     return expr
   expr = expr.strip()
   global token, nextToken
-  if sys.version_info[0] >= 3:
-    nextToken = tokenize(expr).__next__
-  else:
-    nextToken = tokenize(expr).next
+  nextToken = partial(next, tokenize(expr))
   token = nextToken()
   r = expression().getTree()
   if D:
