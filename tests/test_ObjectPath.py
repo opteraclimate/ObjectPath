@@ -697,11 +697,3 @@ class ObjectPath_Paths(unittest.TestCase):
       execute3("[{'foo':1, 'bar':2},{'foo':3}].{'foo':@.foo, 'bar':@.bar}"),
       [{'foo':1,'bar':2}, {'foo':3}]
     )
-
-
-#testcase2=unittest.FunctionTestCase(test_efficiency(2))
-testcase1 = unittest.TestLoader().loadTestsFromTestCase(ObjectPath)
-testcase2 = unittest.TestLoader().loadTestsFromTestCase(ObjectPath_Paths)
-
-op_test = unittest.TestSuite([testcase1, testcase2])
-#utils_interpreter=unittest.TestSuite([testcase2])

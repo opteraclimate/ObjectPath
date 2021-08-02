@@ -13,6 +13,15 @@ try:
 except IOError:
   requirements = []
 
+try:
+    with open("requirements_dev.txt") as test_reqs:
+        lines = test_reqs.read().split("\n")[1:]  # skip the -r requirements.txt
+        test_requirements = list(
+            filter(lambda l: not l.startswith("#") and not l.startswith("git+"), lines)
+        )
+except IOError:
+    test_requirements = []
+
 long_description = (read('README.rst') + '\n' + 'Download\n' '********\n')
 
 setup(
@@ -36,5 +45,6 @@ setup(
   install_requires=requirements,
   zip_safe=True,
   entry_points={'console_scripts': ['objectpath = objectpath.shell:main']},
-  test_suite="tests"
+  test_suite="tests",
+  tests_require=test_requirements,
 )
