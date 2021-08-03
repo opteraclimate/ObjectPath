@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from functools import partial
+
 from objectpath.core.interpreter import *
 from objectpath.core import ProgrammingError, ExecutionError
 from random import randint, choice
@@ -100,10 +102,53 @@ object4 = {
   }
 }
 
+object5 = {
+  "cars": {
+    "american": [
+      {
+        "make": "carusa",
+        "model": "4wheel",
+        "engine": {
+          "displacement": 3.0,
+          "power": 74.75,
+        }
+      },
+      {
+        "make": "usaveh",
+        "model": "hatch",
+        "engine": {
+          "displacement": 2.0,
+          "power": 53,
+        },
+      },
+    ],
+    "japanese": [
+      {
+        "make": "jproll",
+        "model": "sedan2",
+        "engine": {
+          "displacement": 1.7,
+          "power": 100,
+        },
+      },
+      {
+        "make": "jabile",
+        "model": "van1",
+        "engine": {
+          "displacement": 2.3,
+          "horsepower": 189,
+        },
+      },
+    ],
+  }
+}
+
+
 tree1 = Tree(object1)
 tree2 = Tree(object2)
 tree3 = Tree(object3)
 tree4 = Tree(object4)
+tree5 = Tree(object5)
 
 def execute_raw(expr):
   return tree1.execute(expr)
@@ -114,33 +159,19 @@ if sys.version_info.major > 2:
 
 TYPES = tuple(TYPES)
 
-def execute(expr):
-  r = tree1.execute(expr)
+def execute_tree(tree, expr):
+  r = tree.execute(expr)
   if isinstance(r, TYPES):
     return list(r)
   else:
     return r
 
-def execute2(expr):
-  r = tree2.execute(expr)
-  if isinstance(r, TYPES):
-    return list(r)
-  else:
-    return r
+execute = partial(execute_tree, tree1)
+execute2 = partial(execute_tree, tree2)
+execute3 = partial(execute_tree, tree3)
+execute4 = partial(execute_tree, tree4)
+execute5 = partial(execute_tree, tree5)
 
-def execute3(expr):
-  r = tree3.execute(expr)
-  if isinstance(r, TYPES):
-    return list(r)
-  else:
-    return r
-
-def execute4(expr):
-  r = tree4.execute(expr)
-  if isinstance(r, TYPES):
-    return list(r)
-  else:
-    return r
 
 class ObjectPath(unittest.TestCase):
 
@@ -495,7 +526,7 @@ class ObjectPath(unittest.TestCase):
     self.assertEqual(execute("sort($.._id + $.._id)[2]"), 2)
     self.assertIsInstance(execute("$.._id[2]"), int)
     self.assertEqual(
-      execute2("$.store.book.(price)[0].price"),
+      execute2("$.store.book.{'price':@.price}[0].price"),
       execute2("$.store.book[0].price")
     )
 
@@ -516,22 +547,24 @@ class ObjectPath_Paths(unittest.TestCase):
     self.assertEqual(execute("$.*[test].o._id"), 2)
     self.assertEqual(execute("$.*['test'].o._id"), 2)
     self.assertEqual(
-      execute('[1,"aa",{"a":2,"c":3},{"c":3},{"a":1,"b":2}].(a,b)'), [{
+      execute('[1,"aa",{"a":2,"c":3},{"c":3},{"a":1,"b":2}].{"a":@.a,"b":@.b}'), [{
         "a": 2
-      }, {
+      },
+      {},
+      {
         "a": 1,
         "b": 2
       }]
     )
     self.assertEqual(
-      execute2("$.store.book.(price,title)[0]"), {
+      execute2("$.store.book.{'price':@.price,'title':@.title}[0]"), {
         "price": 8.95,
         "title": "Sayings of the Century"
       }
     )
     self.assertEqual(len(execute2("$..*['Lord' in @.title]")), 1)
     self.assertEqual(
-      execute2("$..book.(price,title)"), [{
+      list(execute2("$..book.{'price':@.price,'title':@.title}")), [{
         'price': 8.95,
         'title': 'Sayings of the Century'
       }, {
@@ -546,7 +579,7 @@ class ObjectPath_Paths(unittest.TestCase):
       }]
     )
     self.assertEqual(
-      execute2("sort($..(price,title),'price')"),
+      execute2("sort($..book.{'price':@.price,'title':@.title},'price')"),
       [{
         'price': 8.95,
         'title': 'Sayings of the Century'
@@ -556,8 +589,6 @@ class ObjectPath_Paths(unittest.TestCase):
       }, {
         'price': 12.99,
         'title': 'Sword of Honour'
-      }, {
-        'price': 19.95
       }, {
         'price': 22.99,
         'title': 'The Lord of the Rings'
@@ -577,7 +608,7 @@ class ObjectPath_Paths(unittest.TestCase):
     #print()
     #print(execute2("$.store.book.(author,aaa)"))
     self.assertEqual(
-      execute2("$.store.book.(author,aaa)"), [{
+      execute2("$.store.book.{'author':@.author,'aaa':@.aaa}"), [{
         "author": "Nigel Rees"
       }, {
         "author": "Evelyn Waugh"
@@ -588,7 +619,7 @@ class ObjectPath_Paths(unittest.TestCase):
       }]
     )
     self.assertEqual(
-      execute2("$.store.book.(author,price)"), [{
+      execute2("$.store.book.{'author':@.author,'price':@.price}"), [{
         'price': 8.95,
         'author': 'Nigel Rees'
       }, {
@@ -651,9 +682,18 @@ class ObjectPath_Paths(unittest.TestCase):
   def test_get(self):
     self.assertEqual(execute("get({'1':1,'2':2}, '2')"), 2)
 
-#testcase2=unittest.FunctionTestCase(test_efficiency(2))
-testcase1 = unittest.TestLoader().loadTestsFromTestCase(ObjectPath)
-testcase2 = unittest.TestLoader().loadTestsFromTestCase(ObjectPath_Paths)
+  def test_object_construction(self):
+    self.assertEqual(
+      execute5("$.cars.american.{@.model:@.engine.displacement}"),
+      [{"4wheel":3.0}, {"hatch":2.0}]
+    )
 
-op_test = unittest.TestSuite([testcase1, testcase2])
-#utils_interpreter=unittest.TestSuite([testcase2])
+    self.assertEqual(
+      execute3("$.item_1.{'sum':@.x+@.y}"),
+      {'sum':5.6+9}
+    )
+
+    self.assertEqual(
+      execute3("[{'foo':1, 'bar':2},{'foo':3}].{'foo':@.foo, 'bar':@.bar}"),
+      [{'foo':1,'bar':2}, {'foo':3}]
+    )

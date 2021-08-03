@@ -85,9 +85,9 @@ class Tree(Debugger):
     # TODO change to yield?
     def exe(node):
       """
-				node[0] - operator name
-				node[1:] - params
-			"""
+  			node[0] - operator name
+  			node[1:] - params
+  		"""
       types = [
           str
       ]
@@ -105,13 +105,33 @@ class Tree(Debugger):
         return (exe(n) for n in node)
       elif type_node is dict:
         ret = {}
-        for i in node.items():
-          ret[exe(i[0])] = exe(i[1])
+        for k, v in node.items():
+          ret[exe(k)] = exe(v)
         return ret
       op = node[0]
       if op == "or":
         if D: self.debug("%s or %s", node[1], node[2])
         return exe(node[1]) or exe(node[2])
+      elif op == "(toobj)":
+        left = exe(node[1])
+        left = list(left) if isinstance(left, (generator, chain)) else left
+        if isinstance(left, list):
+          def toobj_generator(left, snd):
+            for left_value in left:
+              self.current = left_value
+              if isinstance(self.current, dict):
+                yield {
+                  exe(key):exe(value)
+                  for key, value in snd.items()
+                  if exe(value)
+                }
+          return toobj_generator(left, node[2])
+        else:
+          self.current = left
+          return {
+            exe(key):exe(value)
+            for key, value in node[2].items()
+          }
       elif op == "and":
         if D: self.debug("%s and %s", node[1], node[2])
         return exe(node[1]) and exe(node[2])
