@@ -469,6 +469,7 @@ class ObjectPath(unittest.TestCase):
     self.assertTrue(execute("datetime('2019') in (datetime('2020')-datetime('2018'))"))
     self.assertFalse(execute("datetime('2017') in (datetime('2020')-datetime('2018'))"))
     self.assertTrue(execute("datetime('2017') not in (datetime('2020')-datetime('2018'))"))
+    self.assertIsNone(execute("datetime('hello world')"))
 
     #begins outside
     self.assertFalse(execute("(datetime('2018') - datetime('2017-12-01')) in (datetime('2020')-datetime('2018'))"))

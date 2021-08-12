@@ -706,7 +706,10 @@ class Tree(Debugger):
             except Exception:
               return args[0]
         elif fnName == "datetime":
-          return pendulum.parse(args[0])
+          try:
+            return pendulum.parse(args[0])
+          except:
+            return None
         # polygons
         elif fnName == "area":
 
