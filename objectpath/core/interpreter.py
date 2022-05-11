@@ -656,6 +656,8 @@ class Tree(Debugger):
         elif fnName == "replace":
           if sys.version_info[0] < 3 and type(args[0]) is unicode:
             args[0] = args[0].encode("utf8")
+          if type(args[1]) == re.Pattern:
+            return re.sub(args[1], args[2], args[0])
           return str.replace(args[0], args[1], args[2])
         # TODO this should be supported by /regex/
         # elif fnName=="REsub":
