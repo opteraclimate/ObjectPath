@@ -656,6 +656,14 @@ class Tree(Debugger):
         elif fnName == "replace":
           if sys.version_info[0] < 3 and type(args[0]) is unicode:
             args[0] = args[0].encode("utf8")
+          if len(args) == 2 and type(args[1]) is dict:
+            replaced = args[0]
+            for k, v in args[1].items():
+                if type(k) == re.Pattern:
+                    replaced = re.sub(k, v, replaced)
+                else:
+                    replaced = str.replace(replaced, k, v)
+            return replaced
           if type(args[1]) == re.Pattern:
             return re.sub(args[1], args[2], args[0])
           return str.replace(args[0], args[1], args[2])

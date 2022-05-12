@@ -252,7 +252,7 @@ def nud(self):  # pylint: disable=E0102
       else:
         self_fst_append(token.id)
       advance()
-  self.fst = "".join(regex).replace("\\", "\\\\")
+  self.fst = "".join(regex)#.replace("\\", "\\\\")
   advance("/")
   return self
 
