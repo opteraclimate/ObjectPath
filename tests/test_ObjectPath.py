@@ -401,6 +401,8 @@ class ObjectPath(unittest.TestCase):
 
   def test_builtin_string(self):
     self.assertEqual(execute("replace('foobar','oob','baz')"), 'fbazar')
+    self.assertEqual(execute("replace('foobar', /[obr]/, '.')"), 'f...a.')
+    self.assertEqual(execute("replace('foobar', {'a': 'baz', /o+/: '.', 'f': 'bat'})"), 'bat.bbazr')
     self.assertEqual(execute("""escape('&lt;')"""), "&amp;lt;")
     self.assertEqual(execute("""escape('<"&>')"""), "&lt;&quot;&amp;&gt;")
     self.assertEqual(execute("""unescape('&lt;&quot;&amp;&gt;')"""), "<\"&>")
